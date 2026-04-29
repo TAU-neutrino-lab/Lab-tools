@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lab-tools"
+version = "0.1.0"
+description = "Shared tools for TAU neutrino lab analysis, IO, and simulation workflows."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Emilie Bertholet" }
+]
+dependencies = [
+  "h5py>=3.10",
+  "numpy>=1.24",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
