@@ -44,7 +44,7 @@ from lab_tools.io import read_keysight_h5
 The `-e` flag installs Lab-tools in editable mode. Changes made inside
 `Lab-tools/src/lab_tools` are picked up by this environment without reinstalling.
 
-## Optional Jupyter Support
+## Optional Jupyter Support (recommended)
 
 If you also want to use notebooks, install the notebook extras into the same
 environment:
@@ -65,6 +65,10 @@ from lab_tools.io import read_keysight_h5
 ```
 
 ## Run Tests
+
+Runs automatic checks on the files.
+
+Unless you want to modify the python scripts in this repo you won't need this.
 
 ```bash
 cd TAU-neutrino-lab/Lab-tools

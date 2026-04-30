@@ -7,16 +7,17 @@ The main function is:
 from lab_tools.io import read_keysight_h5
 ```
 
-## Example Data
+## Example/Test Data
 
-The small example file at `examples/data/run530_5waveforms.h5` is safe to keep
-in git. It contains:
+The repository includes a small HDF5 fixture at
+`examples/data/run530_5waveforms.h5`. It is used by tests and examples, not as
+real analysis data. It contains:
 
-- five real Channel 1 segments copied from `run530.h5`
+- five real Channel 1 segments copied from a random run 
 - one synthetic Channel 2 with the same segment timing
 
-This lets examples and tests demonstrate both single-channel and multi-channel
-usage without committing the full raw data file.
+Most users will open their own HDF5 files from an analysis repository, such as
+`PMT-characterization`. 
 
 ## Basic Usage
 
@@ -48,6 +49,24 @@ the same conversion used by Keysight CSV exports:
 ```python
 voltage = raw * YInc + YOrg
 ```
+
+`YInc` is the voltage step per raw ADC count. `YOrg` is the voltage offset. Both
+come from the channel attributes in the HDF5 file, and the reader stores them in
+`metadata["channel_attrs"]`:
+
+```python
+time, voltage, metadata = read_keysight_h5("run530.h5")
+
+yinc = metadata["channel_attrs"]["YInc"]
+yorg = metadata["channel_attrs"]["YOrg"]
+units = metadata["channel_attrs"]["YUnits"]
+
+print(yinc, yorg, units)
+```
+
+The conversion is already applied before `voltage` is returned. You only need
+`YInc` and `YOrg` if you want to inspect the scaling or manually convert raw
+samples loaded with `include_raw=True`.
 
 ## Time Axes
 
