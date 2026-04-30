@@ -1,92 +1,78 @@
 # Lab-tools
 
-Shared Python tools for the `TAU-neutrino-lab` GitHub organization.
+Shared tools for the TAU neutrino lab.
 
-The repository starts small: shared oscilloscope IO for PMT calibration data.
-The package layout is meant to grow naturally as more shared IO, data handling,
-PMT characterization, and simulation utilities are added.
+This repository is meant to be installed once into the Python environment used
+by analysis repositories such as `PMT-characterization`.
 
-The example HDF5 file at `examples/data/run530_5waveforms.h5` contains five
-real Channel 1 segments from `run530.h5` plus a synthetic Channel 2 with the
-same segment timing for multi-channel examples.
+## Repository Layout
 
-## Install from a local checkout
+Clone `Lab-tools` and analysis repositories side by side:
+
+```text
+TAU-neutrino-lab/
+  Lab-tools/
+  PMT-characterization/
+```
+
+## Python Environment
+
+Create one Python environment for the analysis workspace:
 
 ```bash
+cd TAU-neutrino-lab/Lab-tools
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-## Run tests
+After this, Python scripts in any sibling repository can import Lab-tools as
+long as the environment is activated:
 
 ```bash
-python -m unittest discover -s tests
+cd ../PMT-characterization/PMT-calibration
+python my_script.py
 ```
-
-## Use the oscilloscope reader
 
 ```python
 from lab_tools.io import read_keysight_h5
-
-time, voltage, metadata = read_keysight_h5(
-    "examples/data/run530_5waveforms.h5",
-    segment_numbers=[1, 2, 3, 5],
-)
-
-print(metadata["frame"])
-print(metadata["channel_attrs"]["XInc"])
-print(time[:5])
-print(voltage[0, :5])
 ```
 
-Keysight HDF5 waveforms are stored as raw integer samples. The reader applies
-the same conversion used by the PMT CSV exports:
+The `-e` flag installs Lab-tools in editable mode. Changes made inside
+`Lab-tools/src/lab_tools` are picked up by this environment without reinstalling.
+
+## Optional Jupyter Support
+
+If you also want to use notebooks, install the notebook extras into the same
+environment:
+
+```bash
+cd TAU-neutrino-lab/Lab-tools
+source .venv/bin/activate
+
+python -m pip install -e ".[notebooks]"
+python -m ipykernel install --user --name tau-lab --display-name "TAU Lab"
+```
+
+In Jupyter, choose the kernel named `TAU Lab`. Notebook imports are then the
+same as regular Python imports:
 
 ```python
-voltage = raw * YInc + YOrg
+from lab_tools.io import read_keysight_h5
 ```
 
-By default, the reader returns the notebook-style relative time axis:
+## Run Tests
 
-```python
-time = sample_index * XInc
+```bash
+cd TAU-neutrino-lab/Lab-tools
+source .venv/bin/activate
+
+python -m unittest discover -s tests
 ```
 
-Use `time_axis="absolute"` to include the segment timestamp and x-origin:
+## Tool Documentation
 
-```python
-time, voltage, metadata = read_keysight_h5("run530.h5", time_axis="absolute")
-```
-
-## Suggested repository structure
-
-```text
-Lab-tools/
-  src/lab_tools/
-    io/
-      oscilloscope.py
-  tests/
-    data/
-  examples/
-```
-
-Future additions can go under focused modules such as:
-
-```text
-src/lab_tools/pmt/
-src/lab_tools/simulation/
-src/lab_tools/data/
-```
-
-## Install from another repository
-
-Once this repository is pushed to GitHub and tagged, other repositories can pin
-a version:
-
-```toml
-dependencies = [
-  "lab-tools @ git+ssh://git@github.com/TAU-neutrino-lab/Lab-tools.git@v0.1.0",
-]
-```
-
-Pinning a tag keeps old analyses reproducible while allowing this package to
-evolve.
+- [Keysight HDF5 oscilloscope reader](docs/oscilloscope.md)

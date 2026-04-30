@@ -16,5 +16,12 @@ dependencies = [
   "numpy>=1.24",
 ]
 
+[project.optional-dependencies]
+notebooks = [
+  "ipykernel",
+  "jupyterlab",
+  "matplotlib",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]

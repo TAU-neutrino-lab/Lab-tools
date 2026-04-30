@@ -5,6 +5,7 @@
 # python stuff
 __pycache__/
 *.py[cod]
+lab_tools.egg-info/
 
 # Jupyter stuff
 .ipynb_checkpoints/
