@@ -27,7 +27,7 @@ TAU-neutrino-lab/
 ```bash
 cd TAU-neutrino-lab/Lab-tools
 git fetch --tags
-git checkout v0.1.0
+git checkout v0.1.1
 ```
 
 Seeing a detached-HEAD message after checking out a tag is normal. It means the
