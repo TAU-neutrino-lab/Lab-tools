@@ -2,7 +2,7 @@
 
 Shared tools for the TAU neutrino lab.
 
-**Latest stable version: `v0.1.0`**
+**Latest stable version: `v0.1.1`**
 
 Use a tagged version for analysis work. Do not run analysis from `main`, because
 `main` may change while tools are being developed.
