@@ -2,7 +2,7 @@
 
 Shared tools for the TAU neutrino lab.
 
-**Latest stable version: `v0.1.1`**
+**Latest stable version: `v0.1.2`**
 
 Use a tagged version for analysis work. Do not run analysis from `main`, because
 `main` may change while tools are being developed.
@@ -27,7 +27,7 @@ TAU-neutrino-lab/
 ```bash
 cd TAU-neutrino-lab/Lab-tools
 git fetch --tags
-git checkout v0.1.1
+git checkout v0.1.2
 ```
 
 Seeing a detached-HEAD message after checking out a tag is normal. It means the
@@ -131,11 +131,11 @@ Example:
 python -m unittest discover -s tests
 
 git add .
-git commit -m "Release Lab-tools v0.1.1"
+git commit -m "Release Lab-tools v0.1.2"
 
-git tag -a v0.1.1 -m "Lab-tools v0.1.1"
+git tag -a v0.1.2 -m "Lab-tools v0.1.2"
 git push
-git push origin v0.1.1
+git push origin v0.1.2
 ```
 
 Prefer making a new tag for a new stable version. Do not move an existing tag
