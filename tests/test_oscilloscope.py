@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 import unittest
 
 from lab_tools.io import read_keysight_h5, read_oscilloscope_h5, read_segment_time_tags
@@ -17,6 +18,38 @@ FIXTURE = Path(__file__).parents[1] / "examples" / "data" / "run530_5waveforms.h
 
 @unittest.skipUnless(h5py is not None and np is not None, "h5py/numpy are not installed")
 class KeysightH5ReaderTests(unittest.TestCase):
+    def _write_single_segment_fixture(self, path):
+        with h5py.File(path, "w") as h5_file:
+            file_type = h5_file.create_group("FileType")
+            file_type.create_dataset("KeysightH5FileType", data=b"Keysight Waveform")
+
+            frame_dtype = np.dtype(
+                [("Model", "S12"), ("Serial", "S12"), ("Date", "S22")]
+            )
+            frame = h5_file.create_group("Frame")
+            frame.create_dataset(
+                "TheFrame",
+                data=np.array((b"EXR054A", b"TEST000000", b"01-Jan-2026"), dtype=frame_dtype),
+            )
+
+            waveforms = h5_file.create_group("Waveforms")
+            channel = waveforms.create_group("Channel 1")
+            channel.attrs["NumSegments"] = 1
+            channel.attrs["NumPoints"] = 4
+            channel.attrs["XInc"] = 0.5
+            channel.attrs["XOrg"] = -1.0
+            channel.attrs["XUnits"] = b"Second"
+            channel.attrs["YInc"] = 0.1
+            channel.attrs["YOrg"] = -1.0
+            channel.attrs["YUnits"] = b"Volt"
+
+            dataset = channel.create_dataset(
+                "Channel 1 Data",
+                data=np.array([10, 11, 12, 13], dtype=np.int16),
+            )
+            dataset.attrs["SegmentedTimeTag"] = 2.0
+            dataset.attrs["SegmentedXOrg"] = -1.0
+
     def test_reads_all_segments_from_fixture(self):
         time, voltage, metadata = read_keysight_h5(FIXTURE)
 
@@ -80,6 +113,29 @@ class KeysightH5ReaderTests(unittest.TestCase):
                 0.0077964492468747615,
             ],
         )
+
+    def test_reads_single_unsegmented_waveform_dataset(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "single_segment.h5"
+            self._write_single_segment_fixture(path)
+
+            time, voltage, metadata = read_keysight_h5(path)
+
+            np.testing.assert_allclose(time, [0.0, 0.5, 1.0, 1.5])
+            np.testing.assert_allclose(voltage, [[0.0, 0.1, 0.2, 0.3]])
+            self.assertEqual(metadata["segment_numbers"], [1])
+            self.assertEqual(metadata["channel_attrs"]["NumSegments"], 1)
+
+            time, voltage, metadata = read_keysight_h5(path, segment_numbers=[1])
+
+            np.testing.assert_allclose(time, [0.0, 0.5, 1.0, 1.5])
+            np.testing.assert_allclose(voltage, [[0.0, 0.1, 0.2, 0.3]])
+            self.assertEqual(metadata["segment_numbers"], [1])
+
+            segments, tags = read_segment_time_tags(path)
+
+            np.testing.assert_array_equal(segments, [1])
+            np.testing.assert_allclose(tags, [2.0])
 
 
 if __name__ == "__main__":

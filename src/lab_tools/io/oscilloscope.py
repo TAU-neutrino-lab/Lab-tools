@@ -64,6 +64,14 @@ def read_keysight_h5(
     with h5py.File(path, "r") as h5_file:
         channel_group = h5_file["Waveforms"][channel_name]
         all_segment_names = sorted_segment_names(channel_group)
+        if not all_segment_names:
+            available = ", ".join(channel_group.keys()) or "<empty>"
+            raise ValueError(
+                f"No waveform datasets were found in {channel_group.name!r}. "
+                "Expected datasets named like 'Channel 1 Seg1Data', or a single "
+                f"direct 1-D numeric dataset for an unsegmented acquisition. "
+                f"Available entries: {available}"
+            )
         selected_names = _select_segment_names(
             all_segment_names,
             segment_numbers=segment_numbers,
@@ -96,7 +104,7 @@ def read_keysight_h5(
                 x_origin=x_origin,
             )
 
-            segment = segment_number(name)
+            segment = segment_number(name, default=len(selected_segments) + 1)
             selected_segments.append(segment)
             time_tags.append(time_tag)
             x_origins.append(x_origin)
@@ -144,20 +152,31 @@ def read_segment_time_tags(
     with h5py.File(filename, "r") as h5_file:
         channel_group = h5_file["Waveforms"][channel_name]
         names = sorted_segment_names(channel_group)
-        segments = np.array([segment_number(name) for name in names], dtype=int)
+        if not names:
+            available = ", ".join(channel_group.keys()) or "<empty>"
+            raise ValueError(
+                f"No waveform datasets were found in {channel_group.name!r}. "
+                f"Available entries: {available}"
+            )
+        segments = np.array(
+            [segment_number(name, default=index + 1) for index, name in enumerate(names)],
+            dtype=int,
+        )
         tags = np.array(
-            [float(channel_group[name].attrs["SegmentedTimeTag"]) for name in names],
+            [float(channel_group[name].attrs.get("SegmentedTimeTag", 0.0)) for name in names],
             dtype=float,
         )
 
     return segments, tags
 
 
-def segment_number(name: str) -> int:
+def segment_number(name: str, *, default: int | None = None) -> int:
     """Extract the integer segment number from names like ``Channel 1 Seg12Data``."""
 
     match = _SEGMENT_DATA_RE.search(name)
     if not match:
+        if default is not None:
+            return default
         raise ValueError(f"Could not extract a segment number from {name!r}")
     return int(match.group(1))
 
@@ -166,7 +185,27 @@ def sorted_segment_names(channel_group: Any) -> list[str]:
     """Return waveform dataset names sorted by numeric segment number."""
 
     names = [name for name in channel_group.keys() if _SEGMENT_DATA_RE.search(name)]
-    return sorted(names, key=segment_number)
+    if names:
+        return sorted(names, key=segment_number)
+
+    return _single_unsegmented_waveform_name(channel_group)
+
+
+def _single_unsegmented_waveform_name(channel_group: Any) -> list[str]:
+    """Return a fallback waveform dataset for unsegmented Keysight exports."""
+
+    candidates = []
+    for name, obj in channel_group.items():
+        shape = getattr(obj, "shape", None)
+        dtype = getattr(obj, "dtype", None)
+        if shape is None or dtype is None:
+            continue
+        if len(shape) == 1 and getattr(dtype, "kind", None) in "biufc":
+            candidates.append(name)
+
+    if len(candidates) == 1:
+        return candidates
+    return []
 
 
 def attrs_to_dict(h5_object: Any) -> dict[str, Any]:
@@ -245,7 +284,10 @@ def _select_segment_names(
     if segment_numbers is None:
         return list(segment_names)
 
-    names_by_number = {segment_number(name): name for name in segment_names}
+    names_by_number = {
+        segment_number(name, default=index + 1): name
+        for index, name in enumerate(segment_names)
+    }
     selected_numbers = [int(segment) for segment in segment_numbers]
     missing = [segment for segment in selected_numbers if segment not in names_by_number]
     if missing:
