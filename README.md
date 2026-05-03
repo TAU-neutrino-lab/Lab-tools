@@ -128,6 +128,7 @@ When the code is ready for users:
 Example:
 
 ```bash
+# always run the tests before tagging
 python -m unittest discover -s tests
 
 git add .

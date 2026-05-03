@@ -133,8 +133,6 @@ segments, time_tags = read_segment_time_tags("examples/data/run530_5waveforms.h5
 
 ## Notebook Example
 
-See the worked notebook:
-
 ```text
 examples/keysight_h5_oscilloscope.ipynb
 ```
