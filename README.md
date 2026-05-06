@@ -2,12 +2,23 @@
 
 Shared tools for the TAU neutrino lab.
 
-**Latest stable version: `v0.1.2`**
+**Latest stable version: `v0.1.3`**
 
 Use a tagged version for analysis work. Do not run analysis from `main`, because
 `main` may change while tools are being developed.
 
-## Users
+### Check Out the Stable Tag
+
+```bash
+cd TAU-neutrino-lab/Lab-tools
+git fetch --tags
+git checkout v0.1.3
+```
+
+Seeing a detached-HEAD message after checking out a tag is normal. It means the
+folder is pinned to that exact released version.
+
+## Installation (to do once)
 
 These instructions are for people who want to use Lab-tools from another
 repository, such as `PMT-characterization`.
@@ -22,72 +33,91 @@ TAU-neutrino-lab/
   PMT-characterization/
 ```
 
-### Check Out the Stable Tag
+### Linux / macOS users
 
-```bash
-cd TAU-neutrino-lab/Lab-tools
-git fetch --tags
-git checkout v0.1.2
-```
+#### Create Python Environment 
 
-Seeing a detached-HEAD message after checking out a tag is normal. It means the
-folder is pinned to that exact released version.
-
-### Create the Python Environment
-
-Create one Python environment for the analysis workspace:
+Create a virtual python environment in the Lab-tools repository
 
 ```bash
 cd TAU-neutrino-lab/Lab-tools
 
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 
 python -m pip install --upgrade pip
 python -m pip install .
 ```
 
-After this, Python scripts in any sibling repository can import Lab-tools as
-long as the environment is activated:
+#### Install Jupyter kernels
+
+If you also want to use notebooks, install the notebook extras into the same environment:
 
 ```bash
-cd ../PMT-characterization/PMT-calibration
-python my_script.py
-```
-
-```python
-from lab_tools.io import read_keysight_h5
-```
-
-### Optional Jupyter Support
-
-If you also want to use notebooks, install the notebook extras into the same
-environment:
-
-```bash
-cd TAU-neutrino-lab/Lab-tools
-source .venv/bin/activate
-
+# cd TAU-neutrino-lab/Lab-tools
+# source .venv/bin/activate
 python -m pip install ".[notebooks]"
 python -m ipykernel install --user --name tau-lab --display-name "TAU Lab"
 ```
 
-In Jupyter or VS Code, choose the kernel named `TAU Lab`. Notebook imports are
-then the same as regular Python imports:
+In Jupyter or VS Code, choose the kernel named `TAU Lab`. 
 
-```python
-from lab_tools.io import read_keysight_h5
+### Windows (PowerShell) users
+
+#### Create Python Environment 
+
+Create a virtual python environment in the Lab-tools repository
+
+```powershell
+cd TAU-neutrino-lab/Lab-tools
+
+python -m venv .venv
+.\.venv\Scripts\activate
+python -m pip install --upgrade pip
+python -m pip install .
 ```
+
+If PowerShell blocks activation scripts, run:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then retry:
+
+```powershell
+.\.venv\Scripts\activate
+```
+
+#### Install Jupyter kernels
+
+If you also want to use notebooks, install the notebook extras into the same environment:
+
+```bash
+# cd TAU-neutrino-lab/Lab-tools
+# .\.venv\Scripts\activate
+python -m pip install ".[notebooks]"
+python -m ipykernel install --user --name tau-lab --display-name "TAU Lab"
+```
+
+### Usage
+
+Once the environment is created, it can be used in any of the other repositories of TAU-neutrino-lab after activation
+
+```bash
+cd TAU-neutrino-lab/Lab-tools
+source .venv/bin/activate # Linux / Mac
+.\.venv\Scripts\activate # Windows
+```
+
+See examples for practical information on how to call the different functions within a script or in a notebook
+
 
 ## Developers
 
-These instructions are for modifying Lab-tools itself.
-
-### Editable Install
-
 Work from `main` when developing, and install in editable mode:
 
-```bash
+<!-- ```bash
 cd TAU-neutrino-lab/Lab-tools
 git checkout main
 
@@ -99,7 +129,7 @@ python -m pip install -e ".[notebooks]"
 ```
 
 The `-e` flag installs Lab-tools in editable mode. Changes made inside
-`Lab-tools/src/lab_tools` are picked up by this environment without reinstalling.
+`Lab-tools/src/lab_tools` are picked up by this environment without reinstalling. -->
 
 ### Run Tests
 
@@ -132,11 +162,11 @@ Example:
 python -m unittest discover -s tests
 
 git add .
-git commit -m "Release Lab-tools v0.1.2"
+git commit -m "Release Lab-tools v0.1.3"
 
-git tag -a v0.1.2 -m "Lab-tools v0.1.2"
+git tag -a v0.1.3 -m "Lab-tools v0.1.3"
 git push
-git push origin v0.1.2
+git push origin v0.1.3
 ```
 
 Prefer making a new tag for a new stable version. Do not move an existing tag
