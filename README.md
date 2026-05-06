@@ -2,7 +2,7 @@
 
 Shared tools for the TAU neutrino lab.
 
-**Latest stable version: `v0.1.3`**
+**Latest stable version: `v0.1.4`**
 
 Use a tagged version for analysis work. Do not run analysis from `main`, because
 `main` may change while tools are being developed.
@@ -10,13 +10,18 @@ Use a tagged version for analysis work. Do not run analysis from `main`, because
 ### Check Out the Stable Tag
 
 ```bash
-cd TAU-neutrino-lab/Lab-tools
 git fetch --tags
-git checkout v0.1.3
+git checkout v0.1.4
 ```
 
 Seeing a detached-HEAD message after checking out a tag is normal. It means the
 folder is pinned to that exact released version.
+
+#### Update the virtual environment (if needed)
+
+```bash
+pip install -e ".[notebooks]"
+```
 
 ## Installation (to do once)
 
@@ -46,21 +51,11 @@ python -m venv .venv
 source .venv/bin/activate
 
 python -m pip install --upgrade pip
-python -m pip install .
-```
-
-#### Install Jupyter kernels
-
-If you also want to use notebooks, install the notebook extras into the same environment:
-
-```bash
-# cd TAU-neutrino-lab/Lab-tools
-# source .venv/bin/activate
 python -m pip install ".[notebooks]"
 python -m ipykernel install --user --name tau-lab --display-name "TAU Lab"
 ```
 
-In Jupyter or VS Code, choose the kernel named `TAU Lab`. 
+To use in a Jupyter notebook, choose the kernel named `TAU Lab`. 
 
 ### Windows (PowerShell) users
 
@@ -74,7 +69,8 @@ cd TAU-neutrino-lab/Lab-tools
 python -m venv .venv
 .\.venv\Scripts\activate
 python -m pip install --upgrade pip
-python -m pip install .
+python -m pip install ".[notebooks]"
+python -m ipykernel install --user --name tau-lab --display-name "TAU Lab"
 ```
 
 If PowerShell blocks activation scripts, run:
@@ -89,16 +85,8 @@ Then retry:
 .\.venv\Scripts\activate
 ```
 
-#### Install Jupyter kernels
+To use in a Jupyter notebook, choose the kernel named `TAU Lab`. 
 
-If you also want to use notebooks, install the notebook extras into the same environment:
-
-```bash
-# cd TAU-neutrino-lab/Lab-tools
-# .\.venv\Scripts\activate
-python -m pip install ".[notebooks]"
-python -m ipykernel install --user --name tau-lab --display-name "TAU Lab"
-```
 
 ### Usage
 
@@ -162,11 +150,11 @@ Example:
 python -m unittest discover -s tests
 
 git add .
-git commit -m "Release Lab-tools v0.1.3"
+git commit -m "Release Lab-tools v0.1.4"
 
-git tag -a v0.1.3 -m "Lab-tools v0.1.3"
+git tag -a v0.1.4 -m "Lab-tools v0.1.4"
 git push
-git push origin v0.1.3
+git push origin v0.1.4
 ```
 
 Prefer making a new tag for a new stable version. Do not move an existing tag
