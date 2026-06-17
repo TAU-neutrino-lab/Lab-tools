@@ -2,7 +2,14 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from lab_tools.io import read_keysight_h5, read_oscilloscope_h5, read_segment_time_tags
+from lab_tools.io import (
+    iter_keysight_chunks,
+    read_keysight_h5,
+    read_keysight_h5_direct,
+    read_oscilloscope_h5,
+    read_segment_time_tags,
+    standard_units,
+)
 
 
 try:
@@ -49,6 +56,29 @@ class KeysightH5ReaderTests(unittest.TestCase):
             )
             dataset.attrs["SegmentedTimeTag"] = 2.0
             dataset.attrs["SegmentedXOrg"] = -1.0
+
+    def _write_waveform_table_fixture(self, path):
+        with h5py.File(path, "w") as h5_file:
+            channel = h5_file.create_group("Channel 1")
+            channel.attrs["NumWaveforms"] = 3
+            channel.attrs["NumPoints"] = 4
+            channel.attrs["XInc"] = 0.25
+            channel.attrs["XOrg"] = -0.5
+            channel.attrs["XUnits"] = b"Second"
+            channel.attrs["YInc"] = 0.01
+            channel.attrs["YOrg"] = -1.0
+            channel.attrs["YUnits"] = b"Volt"
+            channel.create_dataset(
+                "Channel 1Data",
+                data=np.array(
+                    [
+                        [100, 101, 102, 103],
+                        [110, 111, 112, 113],
+                        [120, 121, 122, 123],
+                    ],
+                    dtype=np.int16,
+                ),
+            )
 
     def test_reads_all_segments_from_fixture(self):
         time, voltage, metadata = read_keysight_h5(FIXTURE)
@@ -99,6 +129,13 @@ class KeysightH5ReaderTests(unittest.TestCase):
         self.assertEqual(metadata["segment_numbers"], [1, 2, 3, 4, 5])
         np.testing.assert_allclose(voltage.max(axis=1), [0.245, 0.25, 0.255, 0.26, 0.265])
 
+    def test_direct_reader_keeps_single_time_axis_for_segmented_files(self):
+        time, voltage, metadata = read_keysight_h5_direct(FIXTURE, segment_numbers=[1, 2])
+
+        self.assertEqual(time.shape, (1600,))
+        self.assertEqual(voltage.shape, (2, 1600))
+        self.assertEqual(metadata["segment_numbers"], [1, 2])
+
     def test_reads_segment_time_tags(self):
         segments, tags = read_segment_time_tags(FIXTURE)
 
@@ -136,6 +173,64 @@ class KeysightH5ReaderTests(unittest.TestCase):
 
             np.testing.assert_array_equal(segments, [1])
             np.testing.assert_allclose(tags, [2.0])
+
+    def test_reads_root_level_waveform_table(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "table.h5"
+            self._write_waveform_table_fixture(path)
+
+            time, voltage, metadata = read_keysight_h5(path, segment_numbers=[1, 3])
+
+            np.testing.assert_allclose(time, [0.0, 0.25, 0.5, 0.75])
+            np.testing.assert_allclose(
+                voltage,
+                [
+                    [0.0, 0.01, 0.02, 0.03],
+                    [0.2, 0.21, 0.22, 0.23],
+                ],
+            )
+            self.assertEqual(metadata["segment_numbers"], [1, 3])
+            self.assertEqual(metadata["layout"], "waveform_dataset")
+
+    def test_direct_reader_uses_table_rows_and_x_origin_time(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "table.h5"
+            self._write_waveform_table_fixture(path)
+
+            time, voltage, metadata = read_keysight_h5_direct(path, segment_numbers=range(2))
+
+            np.testing.assert_allclose(time, [-0.5, -0.25, 0.0, 0.25])
+            np.testing.assert_allclose(
+                voltage,
+                [
+                    [0.0, 0.01, 0.02, 0.03],
+                    [0.1, 0.11, 0.12, 0.13],
+                ],
+            )
+            self.assertEqual(metadata["segment_numbers"], [0, 1])
+
+            time_ns, voltage_mV, adc_step_mV, units_time, units_voltage = standard_units(
+                time,
+                voltage,
+                metadata,
+            )
+            np.testing.assert_allclose(time_ns, [-5e8, -2.5e8, 0.0, 2.5e8])
+            np.testing.assert_allclose(voltage_mV[1], [100.0, 110.0, 120.0, 130.0])
+            self.assertEqual(adc_step_mV, 10.0)
+            self.assertEqual((units_time, units_voltage), ("ns", "mV"))
+
+    def test_iterates_waveform_table_chunks_in_millivolts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "table.h5"
+            self._write_waveform_table_fixture(path)
+
+            chunks = list(iter_keysight_chunks([path], chunk_size=2))
+
+            self.assertEqual(len(chunks), 2)
+            self.assertEqual(chunks[0]["segment_numbers"], [0, 1])
+            self.assertEqual(chunks[1]["segment_numbers"], [2])
+            np.testing.assert_allclose(chunks[0]["time_ns"], [-5e8, -2.5e8, 0.0, 2.5e8])
+            np.testing.assert_allclose(chunks[0]["voltage_mV"][0], [0.0, 10.0, 20.0, 30.0])
 
 
 if __name__ == "__main__":
